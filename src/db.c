@@ -58,6 +58,12 @@ void updateLFU(robj *val) {
     val->lru = (LFUGetTimeInMinutes()<<8) | counter;
 }
 
+void updateLFU2(robj *val) {
+    unsigned long counter = LFUDecrAndReturn2(val);
+    counter = LFULogIncr(counter);
+    val->lfu = (LFUGetTimeInMinutes()<<8) | counter;
+}
+
 /* Lookup a key for read or write operations, or return NULL if the key is not
  * found in the specified DB. This function implements the functionality of
  * lookupKeyRead(), lookupKeyWrite() and their ...WithFlags() variants.
@@ -123,6 +129,7 @@ robj *lookupKey(redisDb *db, robj *key, int flags) {
             } else {
                 val->lru = LRU_CLOCK();
             }
+            updateLFU2(val);
         }
 
         if (!(flags & (LOOKUP_NOSTATS | LOOKUP_WRITE)))

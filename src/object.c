@@ -47,6 +47,7 @@ robj *createObject(int type, void *ptr) {
     o->ptr = ptr;
     o->refcount = 1;
     o->lru = 0;
+    o->lfu = 0;
     return o;
 }
 

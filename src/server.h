@@ -895,6 +895,8 @@ struct RedisModuleDigest {
 #define LRU_CLOCK_MAX ((1<<LRU_BITS)-1) /* Max value of obj->lru */
 #define LRU_CLOCK_RESOLUTION 1000 /* LRU clock resolution in ms */
 
+#define LFU_BITS 24
+
 #define OBJ_SHARED_REFCOUNT INT_MAX     /* Global object never destroyed. */
 #define OBJ_STATIC_REFCOUNT (INT_MAX-1) /* Object allocated in the stack. */
 #define OBJ_FIRST_SPECIAL_REFCOUNT OBJ_STATIC_REFCOUNT
@@ -904,6 +906,7 @@ struct redisObject {
     unsigned lru:LRU_BITS; /* LRU time (relative to global lru_clock) or
                             * LFU data (least significant 8 bits frequency
                             * and most significant 16 bits access time). */
+    unsigned lfu;          /* LFU for hotkeys. */
     int refcount;
     void *ptr;
 };
@@ -1319,8 +1322,8 @@ struct sharedObjectsStruct {
     *busykeyerr, *oomerr, *plus, *messagebulk, *pmessagebulk, *subscribebulk,
     *unsubscribebulk, *psubscribebulk, *punsubscribebulk, *del, *unlink,
     *rpop, *lpop, *lpush, *rpoplpush, *lmove, *blmove, *zpopmin, *zpopmax,
-    *emptyscan, *multi, *exec, *left, *right, *hset, *srem, *xgroup, *xclaim,  
-    *script, *replconf, *eval, *persist, *set, *pexpireat, *pexpire, 
+    *emptyscan, *multi, *exec, *left, *right, *hset, *srem, *xgroup, *xclaim,
+    *script, *replconf, *eval, *persist, *set, *pexpireat, *pexpire,
     *time, *pxat, *absttl, *retrycount, *force, *justid, *entriesread,
     *lastid, *ping, *setid, *keepttl, *load, *createconsumer,
     *getack, *special_asterick, *special_equals, *default_username, *redacted,
@@ -1716,7 +1719,7 @@ struct redisServer {
     long long el_cmd_cnt_max;
     /* The sum of active-expire, active-defrag and all other tasks done by cron and beforeSleep,
        but excluding read, write and AOF, which are counted by other sets of metrics. */
-    monotime el_cron_duration; 
+    monotime el_cron_duration;
     durationStats duration_stats[EL_DURATION_TYPE_NUM];
 
     /* Configuration */
@@ -3410,6 +3413,7 @@ void evictionPoolAlloc(void);
 unsigned long LFUGetTimeInMinutes(void);
 uint8_t LFULogIncr(uint8_t value);
 unsigned long LFUDecrAndReturn(robj *o);
+unsigned long LFUDecrAndReturn2(robj *o);
 #define EVICT_OK 0
 #define EVICT_RUNNING 1
 #define EVICT_FAIL 2

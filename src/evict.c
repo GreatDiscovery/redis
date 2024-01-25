@@ -325,6 +325,15 @@ unsigned long LFUDecrAndReturn(robj *o) {
     return counter;
 }
 
+unsigned long LFUDecrAndReturn2(robj *o) {
+    unsigned long ldt = o->lfu >> 8;
+    unsigned long counter = o->lfu & 255;
+    unsigned long num_periods = server.lfu_decay_time ? LFUTimeElapsed(ldt) / server.lfu_decay_time : 0;
+    if (num_periods)
+        counter = (num_periods > counter) ? 0 : counter - num_periods;
+    return counter;
+}
+
 /* We don't want to count AOF buffers and slaves output buffers as
  * used memory: the eviction should use mostly data size, because
  * it can cause feedback-loop when we push DELs into them, putting
