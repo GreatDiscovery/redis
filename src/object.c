@@ -1469,6 +1469,9 @@ void objectCommand(client *c) {
 "FREQ <key>",
 "    Return the access frequency index of the <key>. The returned integer is",
 "    proportional to the logarithm of the recent access frequency of the key.",
+"FREQ2 <key>",
+"    Return the access frequency index of the <key>. The returned integer is",
+"    proportional to the logarithm of the recent access frequency of the key.",
 "IDLETIME <key>",
 "    Return the idle time of the <key>, that is the approximated number of",
 "    seconds elapsed since the last access to the key.",
@@ -1506,7 +1509,15 @@ NULL
          * because we update the access time only
          * when the key is read or overwritten. */
         addReplyLongLong(c,LFUDecrAndReturn(o));
-    } else {
+    } else if (!strcasecmp(c->argv[1]->ptr,"freq2") && c->argc == 3) {
+        if ((o = objectCommandLookupOrReply(c,c->argv[2],shared.null[c->resp]))
+            == NULL) return;
+        /* LFUDecrAndReturn should be called
+         * in case of the key has not been accessed for a long time,
+         * because we update the access time only
+         * when the key is read or overwritten. */
+        addReplyLongLong(c,LFUDecrAndReturn2(o));
+    }else {
         addReplySubcommandSyntaxError(c);
     }
 }
