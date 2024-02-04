@@ -3409,6 +3409,7 @@ size_t getSlaveKeyWithExpireCount(void);
 
 /* evict.c -- maxmemory handling and LRU eviction. */
 void evictionPoolAlloc(void);
+void hotPoolAlloc(void);
 #define LFU_INIT_VAL 5
 unsigned long LFUGetTimeInMinutes(void);
 uint8_t LFULogIncr(uint8_t value);
@@ -3419,6 +3420,17 @@ unsigned long LFUDecrAndReturn2(robj *o);
 #define EVICT_FAIL 2
 int performEvictions(void);
 void startEvictionTimeProc(void);
+
+#define HOTOOL_SIZE 16
+#define HOTOOL_CACHED_SDS_SIZE 255
+struct hotPoolEntry {
+    unsigned long long counter;    /* Object idle time (inverse frequency for LFU) */
+    sds key;                    /* Key name. */
+    sds cached;                 /* Cached SDS object for key name. */
+    int dbid;                   /* Key DB number. */
+};
+
+void insertPool(int dbid, sds key, int counter);
 
 /* Keys hashing / comparison functions for dict.c hash tables. */
 uint64_t dictSdsHash(const void *key);

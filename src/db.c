@@ -62,6 +62,10 @@ void updateLFU2(robj *val) {
     unsigned long counter = LFUDecrAndReturn2(val);
     counter = LFULogIncr(counter);
     val->lfu = (LFUGetTimeInMinutes()<<8) | counter;
+    if (counter > 10) {
+        // fixme hot keys insert too frequently
+        insertPool(0, val->ptr, counter);
+    }
 }
 
 /* Lookup a key for read or write operations, or return NULL if the key is not

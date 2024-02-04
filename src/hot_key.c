@@ -7,14 +7,6 @@
 #include "script.h"
 #include <math.h>
 
-#define HOTOOL_SIZE 16
-#define HOTOOL_CACHED_SDS_SIZE 255
-struct hotPoolEntry {
-    unsigned long long counter;    /* Object idle time (inverse frequency for LFU) */
-    sds key;                    /* Key name. */
-    sds cached;                 /* Cached SDS object for key name. */
-    int dbid;                   /* Key DB number. */
-};
 
 static struct hotPoolEntry *HotPoolLFU;
 
@@ -32,17 +24,16 @@ void hotPoolAlloc(void) {
     HotPoolLFU = hp;
 }
 
-void insertPool(int dbid, robj *o, int counter, struct hotPoolEntry *pool) {
-    int k;
-
-    robj *key;
-    k = 0;
+void insertPool(int dbid, sds key, int counter) {
+    int k = 0;
+    struct hotPoolEntry *pool = HotPoolLFU;
     while (k < HOTOOL_SIZE && pool[k].key && pool[k].counter < counter) {
         k++;
     }
     if (k == 0 && pool[HOTOOL_SIZE - 1].key != NULL) {
         /* Can't insert if the element is < the worst element we have
          * and there are no empty buckets. */
+        return;
     } else if (k < HOTOOL_SIZE && pool[k].key == NULL) {
         /* Inserting into empty position. No setup needed before insert. */
     } else {
