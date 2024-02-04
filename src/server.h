@@ -3430,7 +3430,7 @@ struct hotPoolEntry {
     int dbid;                   /* Key DB number. */
 };
 
-void insertPool(int dbid, sds key, int counter);
+void insertPool(int dbid, sds key, uint8_t counter);
 
 /* Keys hashing / comparison functions for dict.c hash tables. */
 uint64_t dictSdsHash(const void *key);
