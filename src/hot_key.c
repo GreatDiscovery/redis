@@ -2,10 +2,7 @@
 // Created by 宋博文 on 2024/2/3.
 //
 #include "server.h"
-#include "bio.h"
 #include "atomicvar.h"
-#include "script.h"
-#include <math.h>
 
 
 static struct hotPoolEntry *HotPoolLFU;
@@ -46,7 +43,7 @@ void insertPool(int dbid, sds key, uint8_t counter) {
         } else {
             k--;
             /* Shift all elements on the left of k (included) to the
-             * left, so we discard the element with smaller idle time. */
+             * left, so we discard the element with smaller counter. */
             sds cached = pool[0].cached;
             if (pool[0].key != pool[0].cached) {
                 sdsfree(pool[0].key);
