@@ -58,14 +58,11 @@ void updateLFU(robj *val) {
     val->lru = (LFUGetTimeInMinutes()<<8) | counter;
 }
 
-void updateLFU2(robj *val) {
+uint8_t updateLFU2(robj *val) {
     unsigned long counter = LFUDecrAndReturn2(val);
     counter = LFULogIncr(counter);
     val->lfu = (LFUGetTimeInMinutes()<<8) | counter;
-    if (counter > 10) {
-        // fixme hot keys insert too frequently
-        insertPool(0, val->ptr, counter);
-    }
+    return counter;
 }
 
 /* Lookup a key for read or write operations, or return NULL if the key is not
@@ -133,7 +130,14 @@ robj *lookupKey(redisDb *db, robj *key, int flags) {
             } else {
                 val->lru = LRU_CLOCK();
             }
-            updateLFU2(val);
+            // todo control by config
+            if (1) {
+                uint8_t counter = updateLFU2(val);
+                // fixme hot keys insert too frequently
+                if (counter > 0) {
+                    insertPool(0, de, counter);
+                }
+            }
         }
 
         if (!(flags & (LOOKUP_NOSTATS | LOOKUP_WRITE)))

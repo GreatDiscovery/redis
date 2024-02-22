@@ -21,8 +21,10 @@ void hotPoolAlloc(void) {
     HotPoolLFU = hp;
 }
 
-void insertPool(int dbid, sds key, uint8_t counter) {
+void insertPool(int dbid, dictEntry *de, uint8_t counter) {
     int k = 0;
+    sds key;
+    key = dictGetKey(de);
     struct hotPoolEntry *pool = HotPoolLFU;
     while (k < HOTOOL_SIZE && pool[k].key && pool[k].counter < counter) {
         k++;
