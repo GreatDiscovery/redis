@@ -21,6 +21,17 @@ void hotPoolAlloc(void) {
     HotPoolLFU = hp;
 }
 
+void hotkeyCommand(client *c) {
+    sds hot_keys = sdsempty();
+    for (int i = 0; i < HOTOOL_SIZE; i++) {
+        if (HotPoolLFU[i].key != NULL) {
+            hot_keys = sdscatprintf(hot_keys, "key:%s, count:%llu;", HotPoolLFU[i].key, HotPoolLFU[i].counter);
+        }
+    }
+    addReplyBulkSds(c, hot_keys);
+}
+
+
 void insertPool(int dbid, dictEntry *de, uint8_t counter) {
     int k = 0;
     sds key;
