@@ -15,8 +15,6 @@ void hotPoolAlloc(void) {
     for (j = 0; j < HOTOOL_SIZE; j++) {
         hp[j].counter = 0;
         hp[j].key = NULL;
-        hp[j].cached = sdsnewlen(NULL, HOTOOL_CACHED_SDS_SIZE);
-        hp[j].dbid = 0;
     }
     HotPoolLFU = hp;
 }
@@ -32,15 +30,18 @@ void hotkeyCommand(client *c) {
 }
 
 
-void insertPool(int dbid, dictEntry *de, uint8_t counter) {
+void insertPool(dictEntry *de, uint8_t counter) {
     int i = 0, k = 0;
     sds key;
     key = dictGetKey(de);
     struct hotPoolEntry *pool = HotPoolLFU;
     // fixme
     while (i < HOTOOL_SIZE) {
-        if (HotPoolLFU[i].key && !sdscmp(key, HotPoolLFU[i].key)) {
-            memmove(pool + i, pool + i + 1, sizeof(pool[0]) * (HOTOOL_SIZE - i));
+        if (pool[i].key && !sdscmp(key, pool[i].key)) {
+//            sdsfree(pool[i].key);
+//            memmove(pool + i, pool + i + 1, sizeof(pool[0]) * (HOTOOL_SIZE - i));
+            pool[i].key = NULL;
+            pool[i].counter = 0;
             break;
         }
         i++;
@@ -58,19 +59,13 @@ void insertPool(int dbid, dictEntry *de, uint8_t counter) {
         /* Inserting in the middle. Now k points to the first element
          * less than the element to insert.  */
         if (pool[HOTOOL_SIZE - 1].key == NULL) {
-            sds cached = pool[HOTOOL_SIZE - 1].cached;
             memmove(pool + k + 1, pool + k, sizeof(pool[0]) * (HOTOOL_SIZE - k - 1));
-            pool[k].cached = cached;
         } else {
             k--;
             /* Shift all elements on the left of k (included) to the
              * left, so we discard the element with smaller counter. */
-            sds cached = pool[0].cached;
-            if (pool[0].key != pool[0].cached) {
-                sdsfree(pool[0].key);
-            }
+            sdsfree(pool[0].key);
             memmove(pool, pool + 1, sizeof(pool[0]) * k);
-            pool[k].cached = cached;
         }
     }
 
@@ -82,10 +77,7 @@ void insertPool(int dbid, dictEntry *de, uint8_t counter) {
     if (klen > HOTOOL_CACHED_SDS_SIZE) {
         pool[k].key = sdsdup(key);
     } else {
-        memcpy(pool[k].cached, key, klen + 1);
-        sdssetlen(pool[k].cached, klen);
-        pool[k].key = pool[k].cached;
+        pool[k].key = sdsdup(key);
     }
     pool[k].counter = counter;
-    pool[k].dbid = dbid;
 }

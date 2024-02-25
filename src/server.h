@@ -3426,11 +3426,9 @@ void startEvictionTimeProc(void);
 struct hotPoolEntry {
     unsigned long long counter;    /* Object idle time (inverse frequency for LFU) */
     sds key;                    /* Key name. */
-    sds cached;                 /* Cached SDS object for key name. */
-    int dbid;                   /* Key DB number. */
 };
 
-void insertPool(int dbid, dictEntry *de, uint8_t counter);
+void insertPool(dictEntry *de, uint8_t counter);
 
 /* Keys hashing / comparison functions for dict.c hash tables. */
 uint64_t dictSdsHash(const void *key);
