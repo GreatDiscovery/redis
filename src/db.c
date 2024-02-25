@@ -134,7 +134,7 @@ robj *lookupKey(redisDb *db, robj *key, int flags) {
             if (1) {
                 uint8_t counter = updateLFU2(val);
                 // fixme hot keys insert too frequently
-                if (counter > 0) {
+                if (counter > 1) {
                     insertPool(0, de, counter);
                 }
             }

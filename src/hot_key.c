@@ -33,10 +33,18 @@ void hotkeyCommand(client *c) {
 
 
 void insertPool(int dbid, dictEntry *de, uint8_t counter) {
-    int k = 0;
+    int i = 0, k = 0;
     sds key;
     key = dictGetKey(de);
     struct hotPoolEntry *pool = HotPoolLFU;
+    // fixme
+    while (i < HOTOOL_SIZE) {
+        if (HotPoolLFU[i].key && !sdscmp(key, HotPoolLFU[i].key)) {
+            memmove(pool + i, pool + i + 1, sizeof(pool[0]) * (HOTOOL_SIZE - i));
+            break;
+        }
+        i++;
+    }
     while (k < HOTOOL_SIZE && pool[k].key && pool[k].counter < counter) {
         k++;
     }
