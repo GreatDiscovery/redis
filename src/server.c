@@ -1513,7 +1513,7 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
         if (moduleCount()) modulesCron();
     }
 
-    run_with_period(60000) {
+    run_with_period(10000) {
         // TODO: control by config
         hotkeyCron();
     }

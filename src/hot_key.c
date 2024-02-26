@@ -14,6 +14,7 @@ void hotkeyCron(void) {
     for (int i = 0; i < HOTOOL_SIZE; ++i) {
         if (pool[i].key) {
             robj* rk = createRawStringObject(pool[i].key, sizeof(pool[i].key));
+            // fixme: what if key is expired
             lookupKeyReadWithFlags(0, rk, LOOKUP_NONE);
         }
     }
