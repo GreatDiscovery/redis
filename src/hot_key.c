@@ -38,11 +38,13 @@ void insertPool(dictEntry *de, uint8_t counter) {
     // fixme
     while (i < HOTOOL_SIZE) {
         if (pool[i].key && !sdscmp(key, pool[i].key)) {
-            pool[i].key = NULL;
-            pool[i].counter = 0;
+            sdsfree(pool[i].key);
+            pool[i].key = 0;
             memmove(pool + i, pool + i + 1, sizeof(pool[0]) * (HOTOOL_SIZE - i));
-            pool[HOTOOL_SIZE - 1].key = NULL;
-            pool[HOTOOL_SIZE - 1].counter = 0;
+            if (pool[HOTOOL_SIZE-1].key) {
+                sdsfree(pool[HOTOOL_SIZE - 1].key);
+                pool[HOTOOL_SIZE - 1].counter = 0;
+            }
             break;
         }
         i++;
