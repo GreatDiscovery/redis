@@ -3410,6 +3410,7 @@ size_t getSlaveKeyWithExpireCount(void);
 /* evict.c -- maxmemory handling and LRU eviction. */
 void evictionPoolAlloc(void);
 void hotPoolAlloc(void);
+void hotkeyCron(void);
 #define LFU_INIT_VAL 5
 unsigned long LFUGetTimeInMinutes(void);
 uint8_t LFULogIncr(uint8_t value);

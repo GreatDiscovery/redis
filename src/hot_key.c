@@ -7,6 +7,18 @@
 
 static struct hotPoolEntry *HotPoolLFU;
 
+// TODO: optimise time complexity
+void hotkeyCron(void) {
+    serverLog(LL_NOTICE, "entering hotkey Cron");
+    struct hotPoolEntry *pool = HotPoolLFU;
+    for (int i = 0; i < HOTOOL_SIZE; ++i) {
+        if (pool[i].key) {
+            robj* rk = createRawStringObject(pool[i].key, sizeof(pool[i].key));
+            lookupKeyReadWithFlags(0, rk, LOOKUP_NONE);
+        }
+    }
+}
+
 void hotPoolAlloc(void) {
     struct hotPoolEntry *hp;
     int j;
@@ -35,14 +47,16 @@ void insertPool(dictEntry *de, uint8_t counter) {
     sds key;
     key = dictGetKey(de);
     struct hotPoolEntry *pool = HotPoolLFU;
-    // fixme
+    // TODO: use condition to avoid entering this branch
     while (i < HOTOOL_SIZE) {
         if (pool[i].key && !sdscmp(key, pool[i].key)) {
             sdsfree(pool[i].key);
             pool[i].key = 0;
             memmove(pool + i, pool + i + 1, sizeof(pool[0]) * (HOTOOL_SIZE - i));
             if (pool[HOTOOL_SIZE-1].key) {
-                sdsfree(pool[HOTOOL_SIZE - 1].key);
+                pool[HOTOOL_SIZE-1].key = NULL;
+                // fixme why?
+//                sdsfree(pool[HOTOOL_SIZE - 1].key);
                 pool[HOTOOL_SIZE - 1].counter = 0;
             }
             break;

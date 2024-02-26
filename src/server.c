@@ -1513,6 +1513,11 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
         if (moduleCount()) modulesCron();
     }
 
+    run_with_period(60000) {
+        // TODO: control by config
+        hotkeyCron();
+    }
+
     /* Fire the cron loop modules event. */
     RedisModuleCronLoopV1 ei = {REDISMODULE_CRON_LOOP_VERSION,server.hz};
     moduleFireServerEvent(REDISMODULE_EVENT_CRON_LOOP,
