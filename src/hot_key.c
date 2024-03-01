@@ -13,9 +13,9 @@ void hotkeyCron(void) {
     struct hotPoolEntry *pool = HotPoolLFU;
     for (int i = 0; i < HOTOOL_SIZE; ++i) {
         if (pool[i].key) {
-            robj* rk = createRawStringObject(pool[i].key, sizeof(pool[i].key));
+//            robj* rk = createRawStringObject(pool[i].key, sizeof(pool[i].key));
             // fixme: what if key is expired
-            lookupKeyReadWithFlags(0, rk, LOOKUP_NONE);
+//            lookupKeyReadWithFlags(0, rk, LOOKUP_NONE);
         }
     }
 }
@@ -52,12 +52,11 @@ void insertPool(dictEntry *de, uint8_t counter) {
     while (i < HOTOOL_SIZE) {
         if (pool[i].key && !sdscmp(key, pool[i].key)) {
             sdsfree(pool[i].key);
-            pool[i].key = 0;
             memmove(pool + i, pool + i + 1, sizeof(pool[0]) * (HOTOOL_SIZE - i));
             if (pool[HOTOOL_SIZE-1].key) {
                 pool[HOTOOL_SIZE-1].key = NULL;
                 // fixme why?
-//                sdsfree(pool[HOTOOL_SIZE - 1].key);
+                sdsfree(pool[HOTOOL_SIZE - 1].key);
                 pool[HOTOOL_SIZE - 1].counter = 0;
             }
             break;
