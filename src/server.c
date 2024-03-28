@@ -1515,7 +1515,7 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
 
     run_with_period(10000) {
         // TODO: control by config
-        hotkeyCron();
+//        hotkeyCron();
     }
 
     /* Fire the cron loop modules event. */
