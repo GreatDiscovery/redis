@@ -38,6 +38,7 @@
 #include "functions.h"
 #include "hdr_histogram.h"
 #include "syscheck.h"
+#include "topkey.h"
 
 #include <time.h>
 #include <signal.h>
@@ -2746,6 +2747,7 @@ void initServer(void) {
 
     scriptingInit(1);
     functionsInit();
+    topkeylogInit();
     slowlogInit();
     latencyMonitorInit();
 

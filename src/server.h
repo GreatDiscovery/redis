@@ -907,6 +907,9 @@ struct redisObject {
                             * LFU data (least significant 8 bits frequency
                             * and most significant 16 bits access time). */
     unsigned lfu;          /* LFU for hotkeys. */
+    unsigned top_type:2; // 01 bigkey 10 hotkey 11 &
+    unsigned timestamp:13;
+    unsigned record:17;
     int refcount;
     void *ptr;
 };
@@ -3411,6 +3414,7 @@ size_t getSlaveKeyWithExpireCount(void);
 void evictionPoolAlloc(void);
 void hotPoolAlloc(void);
 void hotkeyCron(void);
+void updateCoefficient(robj *val, robj* key);
 #define LFU_INIT_VAL 5
 unsigned long LFUGetTimeInMinutes(void);
 uint8_t LFULogIncr(uint8_t value);

@@ -49,6 +49,34 @@ int expireIfNeeded(redisDb *db, robj *key, int flags);
 int keyIsExpired(redisDb *db, robj *key);
 static void dbSetValue(redisDb *db, robj *key, robj *val, int overwrite, dictEntry *de);
 
+// 热度1 = 热度0*e^(-衰减系数*时间差)
+void updateCoefficient(robj *val, robj *key) {
+    // 首次访问
+    if (val->timestamp == 0) {
+        val->timestamp = server.unixtime & 8191;
+        val->record = 1;
+        return;
+    }
+    // fixme 为什么要截取时间戳
+    int cur_time = server.unixtime & 8191;
+    int time_diff = cur_time - val->timestamp;
+
+    // 时间差小于0， 代表超过16383s没有访问该key，直接重置热度
+    if (time_diff < 0) {
+        val->timestamp = cur_time;
+        val->record = 1;
+        return;
+    }
+    // 如果key的热度大于阈值，则保存在堆中
+    // fixme 更新太频繁了
+    if (time_diff) {
+        // todo server.threshold
+        if (val->record > 10) {
+
+        }
+    }
+}
+
 /* Update LFU when an object is accessed.
  * Firstly, decrement the counter if the decrement time is reached.
  * Then logarithmically increment the counter, and update the access time. */
