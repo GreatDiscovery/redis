@@ -2747,7 +2747,7 @@ void initServer(void) {
 
     scriptingInit(1);
     functionsInit();
-    topkeylogInit();
+    topkeyInit();
     slowlogInit();
     latencyMonitorInit();
 
