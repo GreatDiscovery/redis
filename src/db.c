@@ -33,9 +33,11 @@
 #include "latency.h"
 #include "script.h"
 #include "functions.h"
+#include "topkey.h"
 
 #include <signal.h>
 #include <ctype.h>
+#include <math.h>
 
 /*-----------------------------------------------------------------------------
  * C-level DB API
@@ -72,9 +74,11 @@ void updateCoefficient(robj *val, robj *key) {
     if (time_diff) {
         // todo server.threshold
         if (val->record > 10) {
-
+            topkey_push_entry_hotkey(key->ptr, val, val->record);
         }
+        val->record = val->record * pow(2.71828, -2* time_diff);
     }
+    val->timestamp = cur_time;
 }
 
 /* Update LFU when an object is accessed.

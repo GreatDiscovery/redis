@@ -3414,7 +3414,7 @@ size_t getSlaveKeyWithExpireCount(void);
 void evictionPoolAlloc(void);
 void hotPoolAlloc(void);
 void hotkeyCron(void);
-void updateCoefficient(robj *val, robj* key);
+void updateCoefficient(robj *val, robj *key);
 #define LFU_INIT_VAL 5
 unsigned long LFUGetTimeInMinutes(void);
 uint8_t LFULogIncr(uint8_t value);

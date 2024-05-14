@@ -24,6 +24,50 @@ void topkeyInit(void) {
     hotkey_whitelist = dictCreate(&whitelistDictType);
 }
 
+// 获取父节点索引
+int getParentIndex(int childIndex) {
+    return (childIndex - 1) / 2;
+}
+
+// 获取左子节点索引
+int getLeftChildIndex(int parentIndex) {
+    return 2 * parentIndex + 1;
+}
+
+// 获取右子节点索引
+int getRightChildIndex(int parentIndex) {
+    return 2 * parentIndex + 2;
+}
+
+void adjustUp(int index, topEntry **heap) {
+    int parent_index = getParentIndex(index);
+    while (index > 0 && heap[index] < heap[parent_index]) {
+        swap_entry(heap, index, parent_index);
+        index = parent_index;
+        parent_index = getParentIndex(parent_index);
+    }
+}
+
+void adjustDown(int index, int heapSize, topEntry **heap) {
+    int minIndex = index;
+    int leftChildIndex = getLeftChildIndex(index);
+    int rightChildIndex = getRightChildIndex(index);
+    // 找到当前节点、左子节点和右子节点中的最小值
+    if (leftChildIndex < heapSize && heap[leftChildIndex] < heap[minIndex]) {
+        minIndex = leftChildIndex;
+    }
+    if (rightChildIndex < heapSize && heap[rightChildIndex] < heap[minIndex]) {
+        minIndex = rightChildIndex;
+    }
+    // 如果最小值不是当前节点，则交换它们的值并继续下移操作
+    if (index != minIndex) {
+        swap_entry(heap, index, minIndex);
+        adjustDown(minIndex, heapSize, heap);
+    }
+}
+
+
+
 void PushEntry(sds key, robj *value, long long count, int type) {
     dict *whitelist;
     topEntry **topkeys;
@@ -37,6 +81,7 @@ void PushEntry(sds key, robj *value, long long count, int type) {
         case OBJ_STRING:
             break;
         default:
+            break;
     }
 
     // 1. 先从白名单里找，如果在白名单里，寻找数组中的索引
@@ -71,6 +116,14 @@ void PushEntry(sds key, robj *value, long long count, int type) {
             return;
         }
         te->count = count;
-        // todo 调整堆中的位置
+        int parent_index = getParentIndex(index);
+        if (count > topkeys[parent_index]->count) {
+            adjustUp(index, topkeys);
+        } else {
+            adjustDown(index, topkey_capacity[type], topkeys);
+        }
+        te->timestamp = server.unixtime;
+        return;
     }
 }
+
