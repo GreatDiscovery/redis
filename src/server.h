@@ -2057,6 +2057,9 @@ struct redisServer {
     int reply_buffer_resizing_enabled; /* Is reply buffer resizing enabled (1 by default) */
     /* Local environment */
     char *locale_collate;
+
+    int hot_key_count;
+    int big_key_count;
 };
 
 #define MAX_KEYS_BUFFER 256
@@ -3414,6 +3417,7 @@ size_t getSlaveKeyWithExpireCount(void);
 void evictionPoolAlloc(void);
 void hotPoolAlloc(void);
 void hotkeyCron(void);
+void topKeyCron(void);
 void updateCoefficient(robj *val, robj *key);
 #define LFU_INIT_VAL 5
 unsigned long LFUGetTimeInMinutes(void);
@@ -3709,6 +3713,7 @@ void quitCommand(client *c);
 void resetCommand(client *c);
 void failoverCommand(client *c);
 void hotkeyCommand(client *c);
+void hotkeylogCommand(client *c);
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));

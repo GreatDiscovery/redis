@@ -17,8 +17,8 @@ static dictType whitelistDictType = {
 };
 
 void topkeyInit(void) {
-    tophotkeys = zmalloc(sizeof(topEntry *) * 3);
-    for (int i = 0; i < 3; ++i) {
+    tophotkeys = zmalloc(sizeof(topEntry *) * TOP_KEY_SIZE);
+    for (int i = 0; i < TOP_KEY_SIZE; ++i) {
         tophotkeys[i] = zmalloc(sizeof(topEntry));
     }
     hotkey_whitelist = dictCreate(&whitelistDictType);
@@ -67,7 +67,6 @@ void adjustDown(int index, int heapSize, topEntry **heap) {
 }
 
 
-
 void PushEntry(sds key, robj *value, long long count, int type) {
     dict *whitelist;
     topEntry **topkeys;
@@ -104,6 +103,11 @@ void PushEntry(sds key, robj *value, long long count, int type) {
         topkey_capacity[type] += 1;
         value->top_type |= top_type;
         dictAdd(whitelist, topkeys[0]->key, topkeys[0]);
+        if (type == TYPE_HOT_KEY) {
+            server.hot_key_count++;
+        } else {
+            server.big_key_count++;
+        }
         return;
     }
 
@@ -117,13 +121,62 @@ void PushEntry(sds key, robj *value, long long count, int type) {
         }
         te->count = count;
         int parent_index = getParentIndex(index);
-        if (count > topkeys[parent_index]->count) {
+        if (count < topkeys[parent_index]->count) {
             adjustUp(index, topkeys);
         } else {
             adjustDown(index, topkey_capacity[type], topkeys);
         }
         te->timestamp = server.unixtime;
         return;
+    } else { // key不存在
+        if (topkey_capacity[type] < TOP_KEY_SIZE) {
+            // 堆未满，插入到最后并向上调整
+            topkeys[topkey_capacity[type]]->type = type;
+            // todo 为什么每次需要复制一个key
+            topkeys[topkey_capacity[type]]->key = sdsdup(key);
+            topkeys[topkey_capacity[type]]->count = count;
+            topkeys[topkey_capacity[type]]->index = topkey_capacity[type];
+            topkeys[topkey_capacity[type]]->timestamp = server.unixtime;
+            dictAdd(hotkey_whitelist, topkeys[topkey_capacity[type]]->key, topkeys[topkey_capacity[type]]);
+            value->top_type |= type;
+            adjustUp(topkey_capacity[type], topkeys);
+            topkey_capacity[type]++;
+            if (type == TYPE_HOT_KEY) {
+                server.hot_key_count++;
+            } else {
+                server.big_key_count++;
+            }
+        } else if (topkey_capacity[type] == TOP_KEY_SIZE) {
+            // 小于堆中最小的元素，直接快速返回
+            if (count <= topkeys[0]->count) {
+                return;
+            }
+            // 直接替换堆顶的元素，并向下调整
+            dictDelete(whitelist, topkeys[0]->key);
+            topkeys[0]->type = type;
+            topkeys[0]->key = sdsdup(key);
+            topkeys[0]->index = 0;
+            topkeys[0]->timestamp = server.unixtime;
+            topkeys[0]->count = count;
+            value->top_type |= type;
+            dictAdd(whitelist, topkeys[0]->key, topkeys[0]);
+            adjustDown(0, topkey_capacity[type], topkeys);
+        }
     }
 }
 
+// 定时清理堆中热度低于阈值的数据
+void topKeyCron(void) {
+}
+
+void hotkeylogCommand(client *c) {
+    topEntry *te;
+    sds hot_keys = sdsempty();
+    for (int i = 0; i < TOP_KEY_SIZE; i++) {
+        te = tophotkeys[i];
+        if (te) {
+            hot_keys = sdscatprintf(hot_keys, "key:%s, count:%llu;", te->key, te->count);
+        }
+    }
+    addReplyBulkSds(c, hot_keys);
+}

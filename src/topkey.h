@@ -4,6 +4,7 @@
 #include "server.h"
 
 #define TYPE_HOT 5
+#define TOP_KEY_SIZE 3
 #define TYPE_BIG_KEY 1<<0
 #define TYPE_HOT_KEY 1<<1
 
