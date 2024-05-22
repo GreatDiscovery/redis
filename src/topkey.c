@@ -172,7 +172,7 @@ void topKeyCron(void) {
 void hotkeylogCommand(client *c) {
     topEntry *te;
     sds hot_keys = sdsempty();
-    for (int i = 0; i < TOP_KEY_SIZE; i++) {
+    for (int i = 0; i < topkey_capacity[TYPE_HOT]; i++) {
         te = tophotkeys[i];
         if (te) {
             hot_keys = sdscatprintf(hot_keys, "key:%s, count:%llu;", te->key, te->count);

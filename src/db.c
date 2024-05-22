@@ -51,16 +51,19 @@ int expireIfNeeded(redisDb *db, robj *key, int flags);
 int keyIsExpired(redisDb *db, robj *key);
 static void dbSetValue(redisDb *db, robj *key, robj *val, int overwrite, dictEntry *de);
 
-// 热度1 = 热度0*e^(-衰减系数*时间差)
+// todo 设置不同的衰减模型
+// 指数衰减模型：热度1 = 热度0*e^(-衰减系数*时间差)
+// 线性衰减模型：热度1 = Max(0, 热度0-衰减系数*时间差)
+// 对数衰减模型：热度1 = 热度0/log(t+ delta)
 void updateCoefficient(robj *val, robj *key) {
     // 首次访问
     if (val->timestamp == 0) {
-        val->timestamp = server.unixtime & 8191;
+        val->timestamp = server.unixtime;
         val->record = 1;
         return;
     }
     // fixme 为什么要截取时间戳
-    int cur_time = server.unixtime & 8191;
+    int cur_time = server.unixtime;
     int time_diff = cur_time - val->timestamp;
 
     // 时间差小于0， 代表超过16383s没有访问该key，直接重置热度
@@ -76,7 +79,9 @@ void updateCoefficient(robj *val, robj *key) {
         if (val->record > 10) {
             topkey_push_entry_hotkey(key->ptr, val, val->record);
         }
-        val->record = val->record * pow(2.71828, -2* time_diff);
+        // fixme 如何设置热度衰减
+//        val->record = val->record * pow(2.71828, -2* time_diff);
+        val->record = val->record + 1;
     }
     val->timestamp = cur_time;
 }
@@ -162,14 +167,15 @@ robj *lookupKey(redisDb *db, robj *key, int flags) {
             } else {
                 val->lru = LRU_CLOCK();
             }
+            updateCoefficient(val, key);
             // todo control by config
-            if (1) {
-                uint8_t counter = updateLFU2(val);
-                // fixme hot keys insert too frequently
-                if (counter > 1) {
-                    insertPool(de, counter);
-                }
-            }
+//            if (1) {
+//                uint8_t counter = updateLFU2(val);
+//                // fixme hot keys insert too frequently
+//                if (counter > 1) {
+//                    insertPool(de, counter);
+//                }
+//            }
         }
 
         if (!(flags & (LOOKUP_NOSTATS | LOOKUP_WRITE)))
