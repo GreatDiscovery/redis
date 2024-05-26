@@ -200,7 +200,7 @@ void topkeyDeleteEntry(sds key, robj *value, int role) {
         if (de != NULL) {
             type = TYPE_HOT;
             topEntry *te = dictGetVal(de);
-            value->top_type ^= TYPE_BIG_KEY;
+            value->top_type ^= TYPE_HOT_KEY;
             heapDelete(topkeys, te->index, type);
         }
     }
