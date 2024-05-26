@@ -2,6 +2,7 @@
 #include "topkey.h"
 
 dict *hotkey_whitelist = NULL;
+dict *bigkey_whitelist = NULL;
 static topEntry **tophotkeys;
 // 记录每种类型的top数量
 static int topkey_capacity[6] = {0};
@@ -22,6 +23,7 @@ void topkeyInit(void) {
         tophotkeys[i] = zmalloc(sizeof(topEntry));
     }
     hotkey_whitelist = dictCreate(&whitelistDictType);
+    bigkey_whitelist = dictCreate(&whitelistDictType);
 }
 
 // 获取父节点索引
@@ -161,6 +163,45 @@ void PushEntry(sds key, robj *value, long long count, int type) {
             value->top_type |= type;
             dictAdd(whitelist, topkeys[0]->key, topkeys[0]);
             adjustDown(0, topkey_capacity[type], topkeys);
+        }
+    }
+}
+
+// 删除某一个元素，将该元素与末尾节点交换，并向下调整
+void heapDelete(topEntry **topkeys, int index, int type) {
+    swap_entry(topkeys, index, topkey_capacity[type] - 1);
+    dict *whitelist = NULL;
+    topkey_capacity[type]--;
+    if (type == TYPE_HOT) {
+        whitelist = hotkey_whitelist;
+        server.hot_key_count--;
+    } else {
+        whitelist = bigkey_whitelist;
+        server.big_key_count--;
+    }
+    adjustDown(index, topkey_capacity[type], topkeys);
+    dictDelete(whitelist, topkeys[topkey_capacity[type]]->key);
+}
+
+void topkeyDeleteEntry(sds key, robj *value, int role) {
+    int type = value->type;
+    if (value->top_type == 0) {
+        return;
+    }
+    topEntry **topkeys;
+    if (role & TYPE_BIG_KEY && server.big_key_count > 0) {
+
+    }
+    // 一个key可能同时是大key和热key
+    if (role & TYPE_HOT_KEY && server.hot_key_count > 0 ) {
+        topkeys = tophotkeys;
+        // 去除flag并从白名单删除
+        dictEntry *de = dictFind(hotkey_whitelist, key);
+        if (de != NULL) {
+            type = TYPE_HOT;
+            topEntry *te = dictGetVal(de);
+            value->top_type ^= TYPE_BIG_KEY;
+            heapDelete(topkeys, te->index, type);
         }
     }
 }
